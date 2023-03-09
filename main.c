@@ -134,7 +134,7 @@ int checkParameters(int argc, char *argv[], char **source_dir, char **dest_dir, 
         else if (strcmp(argv[i], "-t") == 0) 
         {
             i++;
-            if (i >= argc) 
+            if (i >= argc)
             {
                 fprintf(stderr, "Brak argumentu dla opcji -t\n");
                 return -1;
