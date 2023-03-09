@@ -1,0 +1,3 @@
+funkcja checkParameters() gdy program zostaje wywołany np. w ten sposób:
+./deamon sciezka_zrodlowa sciezka_docelowa -t -R
+nie wyłapuje braku parametru dla -t
