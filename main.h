@@ -1,0 +1,1 @@
+// Deklaracje funkcji
