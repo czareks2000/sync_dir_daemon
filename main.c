@@ -11,6 +11,7 @@
 #include <time.h>
 #include <stdbool.h>
 
+//czarek kazał
 // deklaracje funkcji (narazie będą tutaj, potem trzeba przerzucić do pliku nagłówkowego)
 
 /**
