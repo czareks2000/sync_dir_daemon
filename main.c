@@ -41,7 +41,7 @@ int checkParameters(int argc, char *argv[], char **source, char **destination, u
 
 /**
  * @todo
- * Funkcja kopiująca plik przy pomocy mmap/write (plik źródłowy zostaje zamapowany w całości w pamięci).
+ * Funkcja kopiująca plik przy pomocy read/write.
  * 
  * @param source Ścieżka do pliku źródłowego.
  * @param destination Ścieżka do pliku docelowego.
@@ -210,9 +210,8 @@ int isDir(const char *path)
 
 int copySmallFile(const char *source, const char *destination, const mode_t dest_mode, const struct timespec *dest_access_time, const struct timespec *dest_modification_time)
 {
-    // Wstępnie zapisujemy status oznaczający brak błędu.
     int status = 0, source_fd = -1, dest_fd = -1;
-    // Otwieramy plik źródłowy do odczytu i zapisujemy jego deskryptor. Jeżeli wystąpił błąd
+    // Otwieramy plik źródłowy do odczytu
     if ((source_fd = open(source, O_RDONLY)) == -1)
         status = -1;
     // Otwieramy plik docelowy do zapisu. Jeżeli nie istnieje, to go tworzymy, nadając puste uprawnienia, a jeżeli już istnieje, to go czyścimy.
@@ -233,8 +232,6 @@ int copySmallFile(const char *source, const char *destination, const mode_t dest
         {
             while (1)
             {
-                // Poniższy algorytm jest na str. 45.
-
                 // Pozycja w buforze.
                 char *position = buffer;
                 // Zapisujemy całkowitą liczbę bajtów pozostałych do odczytania.
@@ -253,7 +250,7 @@ int copySmallFile(const char *source, const char *destination, const mode_t dest
                             
                         // Jeżeli wystąpił inny błąd
                         // Ustawiamy kod błędu.
-                        status = -5;
+                        status = -1;
                         // BUFFERSIZE - BUFFERSIZE == 0, więc druga pętla się nie wykona
                         remainingBytes = BUFFERSIZE;
                         // Ustawiamy 0, aby warunek if(bytesRead == 0) przerwał zewnętrzną pętlę while(1).
@@ -267,8 +264,10 @@ int copySmallFile(const char *source, const char *destination, const mode_t dest
                     position += bytesRead;
                 }
 
-                position = buffer;                            // str. 48
-                remainingBytes = BUFFERSIZE - remainingBytes; // zapisujemy całkowitą liczbę odczytanych bajtów, która zawsze jest mniejsza lub równa rozmiarowi bufora
+                position = buffer;  
+                // Zapisujemy całkowitą liczbę odczytanych bajtów                        
+                remainingBytes = BUFFERSIZE - remainingBytes; 
+
                 ssize_t bytesWritten;
                 // Dopóki liczby bajtów pozostałych do zapisania i bajtów zapisanych w aktualnej iteracji są niezerowe.
                 while (remainingBytes != 0 && (bytesWritten = write(dest_fd, position, remainingBytes)) != 0)
@@ -282,15 +281,15 @@ int copySmallFile(const char *source, const char *destination, const mode_t dest
                         continue;
                         // Jeżeli wystąpił inny błąd
                         // Ustawiamy kod błędu.
-                        status = -6;
+                        status = -1;
                         // Ustawiamy 0, aby warunek if(bytesRead == 0) przerwał zewnętrzną pętlę while(1).
                         bytesRead = 0;
                         // Przerywamy pętlę.
                         break;
                     }
-                    // O liczbę bajtów zapisanych w aktualnej iteracji zmniejszamy liczbę pozostałych bajtów i
+                    // Zmniejszamy liczbę pozostałych bajtów o liczbę bajtów zapisanych w aktualnej iteracji
                     remainingBytes -= bytesWritten;
-                    // przesuwamy pozycję w buforze.
+                    // Przesuwamy pozycję w buforze.
                     position += bytesWritten;
                 }
                 // Jeżeli doszliśmy do końca pliku (EOF) lub wystąpił błąd
