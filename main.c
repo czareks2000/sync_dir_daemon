@@ -11,7 +11,8 @@
 #include <time.h>
 #include <stdbool.h>
 
-// deklaracje funkcji (narazie będą tutaj, potem trzeba przerzucić do pliku nagłówkowego)
+// deklaracje funkcji (narazie będą tutaj (jeżeli fukncje nie są skończone), potem trzeba przerzucić do pliku nagłówkowego)
+#include <main.h>
 
 /**
  * @todo
@@ -20,7 +21,7 @@
  * @param param1 Opis pierwszego parametru.
  * @param param2 Opis drugiego parametru.
  */
-void sync_dir_demon();
+void syncDirDemon();
 
 /**
  * @todo
@@ -33,17 +34,41 @@ void sync_dir_demon();
  * @param interval adres zmiennej, do której zostanie przypisana wartość czasu spania
  * @param recursive adres zmiennej, do której zostanie przypisana wartość opcji rekurencyjnej
  * @param threshold adres zmiennej, do której zostanie przypisana wartość progowa rozmiaru pliku
+ * 
  * @return 0 w przypadku poprawnych argumentów, -1 w przypadku błędów
  */
 int checkParameters(int argc, char *argv[], char **source, char **destination, unsigned int *interval, int *recursive, unsigned long long *threshold);
 
 /**
- * Fukncja sprawdzająca czy podana ścieżka jest katalogiem.
+ * @todo
+ * Funkcja kopiująca plik przy pomocy mmap/write (plik źródłowy zostaje zamapowany w całości w pamięci).
  * 
- * @param path Ścieżka do katalogu
- * @return 0 jeżeli podana ścieżka jest katalogiem, -1 w przypadku wystąpienia błędu
+ * @param source Ścieżka do pliku źródłowego.
+ * @param destination Ścieżka do pliku docelowego.
+ * @param dest_mode - Uprawnienia ustawiane plikowi docelowemu
+ * @param dest_access_time - Czas ostatniego dostępu ustawiany plikowi docelowemu
+ * @param dest_modification_time - Czas ostatniej modyfikacji ustawiany plikowi docelowemu
+ * 
+ * @return 0 w przypadku poprawnego kopiowania, -1 w przypadku błędów
  */
-int is_dir(const char *path);
+int copySmallFile(const char *source, const char *destination, const mode_t dest_mode, const struct timespec *dest_access_time, const struct timespec *dest_modification_time);
+
+/**
+ * @todo
+ * Funkcja kopiująca plik przy pomocy mmap/write (plik źródłowy zostaje zamapowany w całości w pamięci).
+ * 
+ * @param source Ścieżka do pliku źródłowego.
+ * @param destination Ścieżka do pliku docelowego.
+ * @param dest_mode - Uprawnienia ustawiane plikowi docelowemu
+ * @param dest_access_time - Czas ostatniego dostępu ustawiany plikowi docelowemu
+ * @param dest_modification_time - Czas ostatniej modyfikacji ustawiany plikowi docelowemu
+ * 
+ * @return 0 w przypadku poprawnego kopiowania, -1 w przypadku błędów
+ */
+int copyBigFile(const char *source, const char *destination, const mode_t dest_mode, const struct timespec *dest_access_time, const struct timespec *dest_modification_time);
+
+
+#define BUFFERSIZE 4096
 
 /*
 argumenty:
@@ -89,14 +114,14 @@ int main(int argc, char *argv[])
     }
 
     // Wywołanie demona
-    sync_dir_demon();
+    syncDirDemon();
    
     return 0;
 }
 
 // Definicje funkcji
 
-void sync_dir_demon()
+void syncDirDemon()
 {
 
 }
@@ -108,8 +133,8 @@ int checkParameters(int argc, char *argv[], char **source_dir, char **dest_dir, 
         return -1;
 
     // Domyślne wartości
-    *interval = 300;
-    *recursive = 0;
+    *interval = 300; // 5min
+    *recursive = 0; // bez rekurencyjnej synchronizacji
     *threshold = 1024 * 1024 * 500; // 500 MB
 
     // Sprawdzenie poprawności argumentów i przypisanie wartości do zmiennych
@@ -167,15 +192,139 @@ int checkParameters(int argc, char *argv[], char **source_dir, char **dest_dir, 
     return 0;
 }
 
-int is_dir(const char *path)
+int isDir(const char *path)
 {   
+    // Próba otworzenia katalogu
     DIR *dir = opendir(path);
 
+    // Sprawdzenie czy udało się otworzyć katalog
     if (dir == NULL)
         return -1;
 
+    // Sprawdzenie czy udało się zamknąć katalog
     if(closedir(dir) < 0)
-        return -1;
+        return -2;
 
     return 0;
 }
+
+int copySmallFile(const char *source, const char *destination, const mode_t dest_mode, const struct timespec *dest_access_time, const struct timespec *dest_modification_time)
+{
+    // Wstępnie zapisujemy status oznaczający brak błędu.
+    int status = 0, source_fd = -1, dest_fd = -1;
+    // Otwieramy plik źródłowy do odczytu i zapisujemy jego deskryptor. Jeżeli wystąpił błąd
+    if ((source_fd = open(source, O_RDONLY)) == -1)
+        status = -1;
+    // Otwieramy plik docelowy do zapisu. Jeżeli nie istnieje, to go tworzymy, nadając puste uprawnienia, a jeżeli już istnieje, to go czyścimy.
+    else if ((dest_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 0000)) == -1)
+        status = -1;
+    // Ustawiamy plikowi docelowemu uprawnienia dest_mode
+    else if (fchmod(dest_fd, dest_mode) == -1)
+        status = -1;
+    else
+    {
+        char *buffer = NULL;
+        // Rezerwujemy pamięć bufora
+        if ((buffer = malloc(BUFFERSIZE)) == NULL)
+        {
+            status = -1;
+        }      
+        else
+        {
+            while (1)
+            {
+                // Poniższy algorytm jest na str. 45.
+
+                // Pozycja w buforze.
+                char *position = buffer;
+                // Zapisujemy całkowitą liczbę bajtów pozostałych do odczytania.
+                size_t remainingBytes = BUFFERSIZE;
+                ssize_t bytesRead;
+                // Dopóki liczby bajtów pozostałych do odczytania i bajtów odczytanych w aktualnej iteracji są niezerowe.
+                while (remainingBytes != 0 && (bytesRead = read(source_fd, position, remainingBytes)) != 0)
+                {
+                    // Jeżeli wystąpił błąd w funkcji read.
+                    if (bytesRead == -1)
+                    {
+                        // Jeżeli funkcja read została przerwana odebraniem sygnału. Blokujemy SIGUSR1 i SIGTERM na czas synchronizacji, więc te sygnały nie mogą spowodować tego błędu.
+                        if (errno == EINTR)
+                            // Ponawiamy próbę odczytu.
+                            continue;
+                            
+                        // Jeżeli wystąpił inny błąd
+                        // Ustawiamy kod błędu.
+                        status = -5;
+                        // BUFFERSIZE - BUFFERSIZE == 0, więc druga pętla się nie wykona
+                        remainingBytes = BUFFERSIZE;
+                        // Ustawiamy 0, aby warunek if(bytesRead == 0) przerwał zewnętrzną pętlę while(1).
+                        bytesRead = 0;
+                        // Przerywamy pętlę.
+                        break;
+                    }
+                    // O liczbę bajtów odczytanych w aktualnej iteracji zmniejszamy liczbę pozostałych bajtów i
+                    remainingBytes -= bytesRead;
+                    // przesuwamy pozycję w buforze.
+                    position += bytesRead;
+                }
+
+                position = buffer;                            // str. 48
+                remainingBytes = BUFFERSIZE - remainingBytes; // zapisujemy całkowitą liczbę odczytanych bajtów, która zawsze jest mniejsza lub równa rozmiarowi bufora
+                ssize_t bytesWritten;
+                // Dopóki liczby bajtów pozostałych do zapisania i bajtów zapisanych w aktualnej iteracji są niezerowe.
+                while (remainingBytes != 0 && (bytesWritten = write(dest_fd, position, remainingBytes)) != 0)
+                {
+                    // Jeżeli wystąpił błąd w funkcji write.
+                    if (bytesWritten == -1)
+                    {
+                        // Jeżeli funkcja write została przerwana odebraniem sygnału.
+                        if (errno == EINTR)
+                        // Ponawiamy próbę zapisu.
+                        continue;
+                        // Jeżeli wystąpił inny błąd
+                        // Ustawiamy kod błędu.
+                        status = -6;
+                        // Ustawiamy 0, aby warunek if(bytesRead == 0) przerwał zewnętrzną pętlę while(1).
+                        bytesRead = 0;
+                        // Przerywamy pętlę.
+                        break;
+                    }
+                    // O liczbę bajtów zapisanych w aktualnej iteracji zmniejszamy liczbę pozostałych bajtów i
+                    remainingBytes -= bytesWritten;
+                    // przesuwamy pozycję w buforze.
+                    position += bytesWritten;
+                }
+                // Jeżeli doszliśmy do końca pliku (EOF) lub wystąpił błąd
+                if (bytesRead == 0)
+                    break;
+            }
+
+            free(buffer);
+
+            // Jeżeli nie wystąpił błąd podczas kopiowania
+            if (status >= 0)
+            {
+                // Tworzymy strukturę zawierającą czasy ostatniego dostępu i modyfikacji.
+                const struct timespec times[2] = {*dest_access_time, *dest_modification_time};
+
+                // Ustawiamy czasy dostępu i modyifkacji
+                if (futimens(dest_fd, times) == -1)
+                    status = -1;
+            }
+        }
+    }
+
+    // Jeżeli plik źródłowy został otwarty, to go zamykamy
+    if (source_fd != -1 && close(source_fd) == -1)
+        return -1;
+    // Jeżeli plik docelowy został otwarty, to go zamykamy
+    if (dest_fd != -1 && close(dest_fd) == -1)
+        return -1;
+
+    return status;
+}
+
+int copyBigFile(const char *source, const char *destination, const mode_t dest_mode, const struct timespec *dest_access_time, const struct timespec *dest_modification_time)
+{
+
+}
+
