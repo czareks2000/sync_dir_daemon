@@ -149,7 +149,7 @@ int demon()
     if (chdir ("/") == -1)
         return -1;
 
-    /* zamknij wszystkie pliki otwarte - użycie opcji NR_OPEN to przesada, lecz działa */
+    /* zamknij wszystkie pliki otwarte - użycie opcji 1024 to przesada, lecz działa */
     for (i = 0; i < 1024; i++)
         close (i);
 
