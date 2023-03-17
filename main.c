@@ -10,7 +10,8 @@
 #include <dirent.h>
 #include <time.h>
 #include <stdbool.h>
-#include <climits.h>
+#include <limits.h>
+#include <sys/mman.h>
 
 // deklaracje funkcji (narazie będą tutaj (jeżeli fukncje nie są skończone), potem trzeba przerzucić do pliku nagłówkowego)
 #include <main.h>
@@ -344,11 +345,6 @@ int copyBigFile(const char *source, const char *destination, const unsigned long
             status = -4;
         else
         {
-            // Wysyłamy jądru wskazówkę, że plik źródłowy będzie odczytywany w trybie sekwencyjnym.
-            if (madvise(map, file_size, MADV_SEQUENTIAL) == -1)
-            // Ustawiamy kod błędu któy oznacza że jest on niekrytyczny, dzięki czemu będziemy mogli działać wydajniej.
-                status = 1;
-
             char *buffer = NULL;
             // Używamy odgórnie ustalonego rozmiaru bufora.
             // Rezerwujemy pamięć bufora.
