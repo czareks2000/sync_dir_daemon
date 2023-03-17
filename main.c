@@ -45,11 +45,11 @@ int checkParameters(int argc, char *argv[], char **source, char **destination, u
  * @todo
  * Funkcja kopiująca plik przy pomocy read/write.
  * 
- * @param source Ścieżka do pliku źródłowego.
- * @param destination Ścieżka do pliku docelowego.
- * @param dest_mode - Uprawnienia ustawiane plikowi docelowemu
- * @param dest_access_time - Czas ostatniego dostępu ustawiany plikowi docelowemu
- * @param dest_modification_time - Czas ostatniej modyfikacji ustawiany plikowi docelowemu
+ * @param source Ścieżka do pliku źródłowego
+ * @param destination Ścieżka do pliku docelowego
+ * @param dest_mode Uprawnienia ustawiane plikowi docelowemu
+ * @param dest_access_time Czas ostatniego dostępu ustawiany plikowi docelowemu
+ * @param dest_modification_time Czas ostatniej modyfikacji ustawiany plikowi docelowemu
  * 
  * @return 0 w przypadku poprawnego kopiowania, -1 w przypadku błędów
  */
@@ -59,11 +59,12 @@ int copySmallFile(const char *source, const char *destination, const mode_t dest
  * @todo
  * Funkcja kopiująca plik przy pomocy mmap/write (plik źródłowy zostaje zamapowany w całości w pamięci).
  * 
- * @param source Ścieżka do pliku źródłowego.
- * @param destination Ścieżka do pliku docelowego.
- * @param dest_mode - Uprawnienia ustawiane plikowi docelowemu
- * @param dest_access_time - Czas ostatniego dostępu ustawiany plikowi docelowemu
- * @param dest_modification_time - Czas ostatniej modyfikacji ustawiany plikowi docelowemu
+ * @param source Ścieżka do pliku źródłowego
+ * @param destination Ścieżka do pliku docelowego
+ * @param file_size Rozmiar kopiowanego pliku
+ * @param dest_mode Uprawnienia ustawiane plikowi docelowemu
+ * @param dest_access_time Czas ostatniego dostępu ustawiany plikowi docelowemu
+ * @param dest_modification_time Czas ostatniej modyfikacji ustawiany plikowi docelowemu
  * 
  * @return 0 w przypadku poprawnego kopiowania, -1 w przypadku błędów
  */
