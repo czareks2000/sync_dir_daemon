@@ -10,6 +10,8 @@
 #include <dirent.h>
 #include <time.h>
 #include <stdbool.h>
+#include <limits.h>
+#include <sys/mman.h>
 
 // deklaracje funkcji (narazie będą tutaj (jeżeli fukncje nie są skończone), potem trzeba przerzucić do pliku nagłówkowego)
 #include <main.h>
@@ -43,11 +45,11 @@ int checkParameters(int argc, char *argv[], char **source, char **destination, u
  * @todo
  * Funkcja kopiująca plik przy pomocy read/write.
  * 
- * @param source Ścieżka do pliku źródłowego.
- * @param destination Ścieżka do pliku docelowego.
- * @param dest_mode - Uprawnienia ustawiane plikowi docelowemu
- * @param dest_access_time - Czas ostatniego dostępu ustawiany plikowi docelowemu
- * @param dest_modification_time - Czas ostatniej modyfikacji ustawiany plikowi docelowemu
+ * @param source Ścieżka do pliku źródłowego
+ * @param destination Ścieżka do pliku docelowego
+ * @param dest_mode Uprawnienia ustawiane plikowi docelowemu
+ * @param dest_access_time Czas ostatniego dostępu ustawiany plikowi docelowemu
+ * @param dest_modification_time Czas ostatniej modyfikacji ustawiany plikowi docelowemu
  * 
  * @return 0 w przypadku poprawnego kopiowania, -1 w przypadku błędów
  */
@@ -57,15 +59,16 @@ int copySmallFile(const char *source, const char *destination, const mode_t dest
  * @todo
  * Funkcja kopiująca plik przy pomocy mmap/write (plik źródłowy zostaje zamapowany w całości w pamięci).
  * 
- * @param source Ścieżka do pliku źródłowego.
- * @param destination Ścieżka do pliku docelowego.
- * @param dest_mode - Uprawnienia ustawiane plikowi docelowemu
- * @param dest_access_time - Czas ostatniego dostępu ustawiany plikowi docelowemu
- * @param dest_modification_time - Czas ostatniej modyfikacji ustawiany plikowi docelowemu
+ * @param source Ścieżka do pliku źródłowego
+ * @param destination Ścieżka do pliku docelowego
+ * @param file_size Rozmiar kopiowanego pliku
+ * @param dest_mode Uprawnienia ustawiane plikowi docelowemu
+ * @param dest_access_time Czas ostatniego dostępu ustawiany plikowi docelowemu
+ * @param dest_modification_time Czas ostatniej modyfikacji ustawiany plikowi docelowemu
  * 
  * @return 0 w przypadku poprawnego kopiowania, -1 w przypadku błędów
  */
-int copyBigFile(const char *source, const char *destination, const mode_t dest_mode, const struct timespec *dest_access_time, const struct timespec *dest_modification_time);
+int copyBigFile(const char *source, const char *destination, const unsigned long long file_size, const mode_t dest_mode, const struct timespec *dest_access_time, const struct timespec *dest_modification_time);
 
 
 #define BUFFERSIZE 4096
@@ -322,8 +325,123 @@ int copySmallFile(const char *source, const char *destination, const mode_t dest
     return status;
 }
 
-int copyBigFile(const char *source, const char *destination, const mode_t dest_mode, const struct timespec *dest_access_time, const struct timespec *dest_modification_time)
+int copyBigFile(const char *source, const char *destination, const unsigned long long file_size,const mode_t dest_mode, const struct timespec *dest_access_time, const struct timespec *dest_modification_time)
 {
-
+    // Podstawowo ustawiony jest status oznaczający brak wystąpienia błędu.
+    int status = 0, source_fd = -1, desc_fd = -1;
+    // Otwieramy plik źródłowy do odczytu i przypisujemy mu deskryptor
+    if ((source_fd = open(source, O_RDONLY)) == -1)
+        status = -1;
+    // Otwieramy plik docelowy do zapisu. Wprzypadku gdy istnieje to go czyścimy, a gdy nie istnieje to tworzymy go nadając puste uprawnienia.
+    else if ((desc_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 0000)) == -1)
+        status = -2;
+    // Ustawiamy plikowi docelowemu uprawnienia dstMode.
+    else if (fchmod(desc_fd, dest_mode) == -1)
+        status = -3;
+    else
+    {
+        char *map;
+        // Odwzorowujemy (mapujemy) w pamięci plik źródłowy w trybie do odczytu.
+        if ((map = mmap(0, file_size, PROT_READ, MAP_SHARED, source_fd, 0)) == MAP_FAILED)
+            status = -4;
+        else
+        {
+            char *buffer = NULL;
+            // Używamy odgórnie ustalonego rozmiaru bufora.
+            // Rezerwujemy pamięć bufora.
+            if ((buffer = malloc(sizeof(char) * BUFFERSIZE)) == NULL)
+                status = -5;
+            else
+            {
+                // Numer bajtu w pliku źródłowym.
+                unsigned long long byte_number;
+                // Aktualna pozycja w buforze.
+                char *current_position;
+                size_t remaining_bytes;
+                ssize_t written_bytes;
+                // Nie może być (byte_number < fileSize - BUFFERSIZE), bo byte_number i fil_size są typu unsigned, więc jeżeli file_size < BUFFERSIZE i odejmiemy, to mamy przepeł
+                //nienie.
+                for (byte_number = 0; byte_number + BUFFERSIZE < file_size; byte_number += BUFFERSIZE)
+                {
+                    // Kopiujemy rozmiar bufora bajtów ze zmapowanej pamięci do bufora.
+                    memcpy(buffer, map + byte_number, BUFFERSIZE);
+                    current_position = buffer;
+                    // Zapisujemy całkowitą liczbę bajtów pozostałych (zawsze jest równa rozmiarowi bufora).
+                    remaining_bytes = BUFFERSIZE;
+                    // Pętla działą do momentu gdy liczby bajtów pozostałych do zapisania i bajtów zapisanych w aktualnej iteracji są różne od zera.
+                    while (remaining_bytes != 0 && (written_bytes = write(desc_fd, current_position, remaining_bytes)) != 0)
+                    {
+                        // W wypadku gdy wystąpił błąd w funkcji write.
+                        if (written_bytes == -1)
+                        {
+                            // Jeżeli funkcja write została przerwana odebraniem sygnału.
+                            if (errno == EINTR)
+                            // Próbujemy zapisać ponownie.
+                            continue;
+                            // W wypadku wystąpienia błędu
+                            status = -6;
+                            // Ustawiamy byte_number aby przerwać wykonywanie powyższej pętli for i ją przerywamy.
+                            byte_number = ULLONG_MAX - BUFFERSIZE;
+                            break;
+                        }
+                        // O liczbę bajtów zapisanych w obecnej iteracji zmniejszamy liczbę reszty bajtów
+                        remaining_bytes -= written_bytes;
+                        // przesuwamy obecną pozycję w buforze.
+                        current_position += written_bytes;
+                    }
+                }
+                // Jeżeli wciaż nie wystąpił błąd podczas kopiowania
+                if (status >= 0)
+                {
+                    // Zapisujemy liczbę bajtów z końca pliku, które nie zmieściły się w całym pojedyńczym buforze.
+                    remaining_bytes = file_size - byte_number;
+                    // Kopiujemy te bajty z pamięci do bufora.
+                    memcpy(buffer, map + byte_number, remaining_bytes);
+                    // Zapisujemy pozycję pierwszego bajtu bufora.
+                    current_position = buffer;
+                    // Dopóki liczby bajtów pozostałych do zapisania i bajtów zapisanych w aktualnej iteracji są niezerowe (podobnie jak powyzej).
+                    while (remaining_bytes != 0 && (written_bytes = write(desc_fd, current_position, remaining_bytes)) != 0)
+                    {
+                        // Jeżeli wystąpił błąd w funkcji write.
+                        if (written_bytes == -1)
+                        {
+                            // Jeżeli funkcja write została przerwana odebraniem sygnału.
+                            if (errno == EINTR)
+                            // Próbujemy zapisać ponownie.
+                            continue;
+                            // W wypadku wystąpienia błędu ustawiamy kod i przerywamy pętlę
+                            status = -7;
+                            break;
+                        }
+                        // O liczbę bajtów zapisanych w obecnej iteracji zmniejszamy liczbę reszty bajtów
+                        remaining_bytes -= written_bytes;
+                        // przesuwamy obecną pozycję w buforze.
+                        current_position += written_bytes;
+                    }
+                }
+                // Zwalniamy pamięć bufora.
+                free(buffer);
+                // Jeśli przy kopiowaniu nie wystąpił żaden błąd to tworzymy strukturę zawierającą ostatni czasy ostatniego i modyfikacji
+                if (status >= 0)
+                {
+                    const struct timespec times[2] = {*dest_access_time, *dest_modification_time};
+                    // Zapisy ustawiają czas modyfikacji na aktualny czas systemowy.
+                    if (futimens(desc_fd, times) == -1)
+                        status = -8;
+                }
+            }
+                // Usuwamy odwzorowanie pliku źródłowego.
+                if (munmap(map, file_size) == -1)
+                    status = -9;
+        }
+    }
+    // Jeżeli plik źródłowy został otwarty to podejmujemy próbę zamknięcia go.
+    if (source_fd != -1 && close(source_fd) == -1)
+    // Każdy niezamknięty plik zajmuje nam cenny deskryptor, a proces może mieć jedynie ograniczoną ich liczbę.
+        status = -10;
+    // Jeżeli plik docelowy został otwarty to podejmujemy próbę zamknięcia go.
+    if (desc_fd != -1 && close(desc_fd) == -1)
+        status = -11;
+    // Funkcja zwraca status z jakim skończyła kopiowanie plików.
+    return status;
 }
-
