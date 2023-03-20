@@ -31,7 +31,6 @@ void sigterm_handler(int sig) //obsługa SIGTERM
 
 int main(int argc, char *argv[])
 {
-
   // wyswietlenie informacji o sposobie użycia programu
   if(argc == 2 && strcmp(argv[1], "--help") == 0) //help
   {
