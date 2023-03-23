@@ -12,8 +12,6 @@
 int copy(char *source, char *destination);
 
 /**
- * @todo zmienić zwracane wartości na bardziej intuicyjne
- * 
  * @brief Porównuje daty modyfikacji dwóch plików.
  * 
  * @param source Ścieżka do pliku źródłowego.
@@ -37,8 +35,6 @@ int cmpModificationDate(char *source, char *destination);
 off_t getFileSize(char *path);
 
 /**
- * @todo Dodać obsługę błędów i zmienić zwracany typ na int
- * 
  * @brief Kopiuje plik o podanej ścieżce do nowego pliku przy użyciu mapowania pamięci.
  * 
  * @param source Ścieżka do pliku, który ma zostać skopiowany.

@@ -12,6 +12,7 @@
 
 #include "../headers/checkdirs.h"
 
+// rozmiar bufora
 #define BUFFER 4096
 
 int copy(char *source, char *destination)
@@ -87,7 +88,8 @@ int copy(char *source, char *destination)
 }
 
 int cmpModificationDate(char *source, char *destination)
-{
+{   
+    // struktury do przechowania artybutów plików
     struct stat sbSrc;
     struct stat sbDst;
 
@@ -105,29 +107,41 @@ int cmpModificationDate(char *source, char *destination)
 
 off_t getFileSize(char *path)
 {
+    // struktura do przechowania artybutów pliku
     struct stat fileSB;
 
+    // odczytanie artybutów
     if(stat(path, &fileSB) != 0)
         return -1;
 
+    // zwrócenie rozmiaru pliku
     return fileSB.st_size;
 }
 
 void mmapCopy(char *source, char *destination)
-{
+{   
+    // pobieramy rozmar pliku
     size_t size = getFileSize(source);
+
+    // otwieramy pliki
     int srcFD = open(source, O_RDONLY);
     int dstFD = open(destination, O_RDWR | O_CREAT, 0666);
-    
-    char *src = mmap(NULL, size, PROT_READ, MAP_PRIVATE, srcFD, 0);
+
+    // ustawiamy rozmar docelowego pliku na taki sam jak źródłowego
     ftruncate(dstFD, size);
+    
+    // mapujemy zawartość src i dst w pamięci podręcznej
+    char *src = mmap(NULL, size, PROT_READ, MAP_PRIVATE, srcFD, 0);
     char *dst = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, dstFD, 0);
 
+    // kopjujemy zawartość pamięci src do dst
     memcpy(dst, src, size);
 
+    // zwalniamy zaalokowaną pamięć
     munmap(src, size);
     munmap(dst, size);
 
+    // zamykamy pliki
     close(srcFD);
     close(dstFD);
 }
@@ -151,8 +165,6 @@ void synchronize(char *source, char* destination, off_t filesize, int recursive)
     strcat(srcPath, "/");
     strcat(dstPath, "/");
     
-    // ten while można do oddzielnej funkcji wyrzucić , w main() tez jest on używany
-
     // sprawdzamy zawartość katalogu
     while((srcEntry = readdir(src)) != NULL)
     {   
@@ -187,8 +199,8 @@ void synchronize(char *source, char* destination, off_t filesize, int recursive)
         else if(recursive == 1 && srcEntry->d_type == DT_DIR)
         {   
             // jeżeli katalog istnieje i ma tą samą datę modyfikacji co źródłowy to pomijamy
-                if(checkExistence(dst,srcEntry->d_name) == 0 && cmpModificationDate(srcPath, dstPath) == 1)
-            continue;
+            if(checkExistence(dst,srcEntry->d_name) == 0 && cmpModificationDate(srcPath, dstPath) == 1)
+                continue;
 
             // jeżeli katalog nie stnieje
             if(checkExistence(dst,srcEntry->d_name) == 1)

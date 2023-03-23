@@ -107,9 +107,8 @@ void deleteExcessiveFiles(char *source, char *destination, int recur)
 
         found = 0; // Wstępnie ustawiamy flagę 
 
-        // Dołączamy nazwę bieżącego wpisu katalogu do ścieżki do katalogu źródłowego
+        // aktualizujemy ścieżki (dodajemy aktualnie sprawdzany plik)
         strcat(srcPath, dEnt->d_name);
-        // Dołączamy nazwę bieżącego wpisu katalogu do ścieżki do katalogu docelowego
         strcat(dstPath, dEnt->d_name);
 
         // Jeżeli katalog źródłowy istnieje
