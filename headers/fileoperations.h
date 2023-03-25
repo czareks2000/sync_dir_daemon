@@ -13,6 +13,8 @@
 void sendLog(const char *format, ...);
 
 /**
+ * @todo dodać kopiowanie daty moyfikacji po utworzeniu kopii
+ * 
  * @brief Kopiuje plik z jednej lokalizacji do drugiej.
  * 
  * @param source Ścieżka do pliku źródłowego.
