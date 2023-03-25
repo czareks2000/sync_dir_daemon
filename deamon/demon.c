@@ -77,13 +77,13 @@ int main(int argc, char *argv[])
     sendLog("Demon idzie spać.");
     sleep(time); 
 
-    // przesłanie informacji do logu
-    if(sigCheck == 0)
-      sendLog("Demon wybudzony naturalnie.");
-  
     // jeżeli otrzymano sygnał SIGTERM
     if(term == 1)
       exit(0); //kończymy program
+
+    // przesłanie informacji do logu
+    if(sigCheck == 0)
+      sendLog("Demon wybudzony naturalnie.");
     
     // usuwamy pliki i katalogi z katalogu docelowego, których nie ma w źródłowym
     deleteExcessiveFiles(argv[1], argv[2], recursive);
