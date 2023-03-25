@@ -10,7 +10,7 @@
  * 
  * @return void
  */
-void sendLog(const char *format, ...)
+void sendLog(const char *format, ...);
 
 /**
  * @brief Kopiuje plik z jednej lokalizacji do drugiej.
