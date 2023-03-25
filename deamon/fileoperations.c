@@ -105,22 +105,10 @@ int copy(char *source, char *destination)
         return -1;
     }
 
-    // uzyskanie informacji o pliku źródłowym
-    struct stat sb;
-    if (stat(source, &sb) == -1) {
-        perror("Błąd podczas uzyskiwania informacji o pliku źródłowym");
+    if(copyModificationDate(source, destination) < 0){
+        perror("Błąd podczas kopiowania daty modyfikacji");
         return -1;
     }
-
-    // ustawienie takiej samej daty modyfikacji dla pliku docelowego
-    struct utimbuf times;
-    times.actime = sb.st_atime;
-    times.modtime = sb.st_mtime;
-    if (utime(destination, &times) == -1) {
-        perror("Błąd podczas ustawiania daty modyfikacji dla pliku docelowego");
-        return -1;
-    }
-
 
     return 0;
 }
@@ -141,6 +129,27 @@ int cmpModificationDate(char *source, char *destination)
         return 1; // daty modyfikacji obu plików są równe
     else if(sbSrc.st_mtime < sbDst.st_mtime)
         return 2; // data modyfikacji pliku źródłowego jest wcześniejsza
+}
+
+int copyModificationDate(char *source, char *destination)
+{
+    // uzyskanie informacji o pliku źródłowym
+    struct stat sb;
+    if (stat(source, &sb) == -1) {
+        perror("Błąd podczas uzyskiwania informacji o pliku źródłowym");
+        return -1;
+    }
+
+    // ustawienie takiej samej daty modyfikacji dla pliku docelowego
+    struct utimbuf times;
+    times.actime = sb.st_atime;
+    times.modtime = sb.st_mtime;
+    if (utime(destination, &times) == -1) {
+        perror("Błąd podczas ustawiania daty modyfikacji dla pliku docelowego");
+        return -1;
+    }
+
+    return 0;
 }
 
 off_t getFileSize(char *path)
@@ -182,6 +191,12 @@ void mmapCopy(char *source, char *destination)
     // zamykamy pliki
     close(srcFD);
     close(dstFD);
+
+    // kopiujemy date modifikacji
+    if(copyModificationDate(source, destination) < 0){
+        perror("Błąd podczas kopiowania daty modyfikacji");
+        return -1;
+    }
 }
 
 void synchronize(char *source, char* destination, off_t filesize, int recursive)
@@ -245,7 +260,7 @@ void synchronize(char *source, char* destination, off_t filesize, int recursive)
             {
                 // tworzymy katalog
                 mkdir(dstPath, 0775);
-                sendLog("Demon skopiował katalog: %s", dstPath);
+                sendLog("Demon utworzył katalog: %s", dstPath);
             }
 
             // kopiujemy pliki rekurencyjnie

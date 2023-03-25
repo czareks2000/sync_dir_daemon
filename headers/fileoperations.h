@@ -39,6 +39,16 @@ int copy(char *source, char *destination);
 int cmpModificationDate(char *source, char *destination);
 
 /**
+ * @brief Kopiuje date modyfikacji z pliku źródłowego do docelowego
+ * 
+ * @param source Ścieżka do pliku źródłowego.
+ * @param destination Ścieżka do pliku docelowego.
+ * 
+ * @return Wartość 0 w przypadku powodzenia, w przypadku błędu -1.
+ */
+int copyModificationDate(char *source, char *destination);
+
+/**
  * @brief Pobiera rozmiar pliku o podanej ścieżce.
  * 
  * @param path Ścieżka do pliku.
