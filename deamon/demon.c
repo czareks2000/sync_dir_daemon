@@ -156,7 +156,7 @@ int demonize()
   dup (0); // stdout 
   dup (0); // stderror 
 
-  syslog(LOG_INFO, "Demon zainicjalizowany.");
+  sendLog("Demon zainicjalizowany.");
 
   return 0;
 }

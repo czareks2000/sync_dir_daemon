@@ -151,13 +151,13 @@ void deleteExcessiveFiles(char *source, char *destination, int recur)
                     deleteExcessiveFiles(srcPath, dstPath, recur);
                 }
                 // Usuwamy katalog
-                sendLog("Demon usuną katalog: %s", dstPath);
+                sendLog("Demon usunął katalog: %s", dstPath);
                 remove(dstPath);
             }
             else // Jeżeli nie jest katalogiem
             {   
                 // Usuwamy plik
-                sendLog("Demon usuną plik: %s", dstPath);
+                sendLog("Demon usunął plik: %s", dstPath);
                 remove(dstPath);
             }
         }

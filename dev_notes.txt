@@ -1,13 +1,12 @@
-funkcja checkParameters() gdy program zostaje wywołany np. w ten sposób:
-./deamon sciezka_zrodlowa sciezka_docelowa -t -R
-nie wyłapuje braku parametru dla -t
+ ./demon /home/user/sync_dir_daemon/src /home/user/sync_dir_daemon/dst -R -t 10
 
+ 
+ sudo journalctl -f  
 
-odczytanie informacji o pliku
+ ps -aux
 
-    struct stat st;
-    if (stat(source, &st) < 0) 
-    {
-        perror("Błąd podczas odczytu informacji o pliku");
-        return -1;
-    }
+ kill nr_procesu
+
+ kill -s USR1 nr_procesu
+
+  może połączyć deleteExcessiveFiles() z synchronize()

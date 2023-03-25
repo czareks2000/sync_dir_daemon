@@ -237,7 +237,12 @@ void synchronize(char *source, char* destination, off_t filesize, int recursive)
         {   
             // jeżeli plik istnieje i ma tą samą datę modyfikacji to pomijamy
             if(checkExistence(dst,srcEntry->d_name) == 0 && cmpModificationDate(srcPath, dstPath) == 1)
+            {   
+                // aktualizujemy ścieżki (usuwamy aktualnie sprawdzany plik)  
+                srcPath[strlen(srcPath) - strlen(srcEntry->d_name)] = '\0';
+                dstPath[strlen(dstPath) - strlen(srcEntry->d_name)] = '\0';
                 continue;
+            }
             
             // kopiujemy do miejsca docelowego
             if(getFileSize(srcPath) >= filesize)
@@ -256,7 +261,12 @@ void synchronize(char *source, char* destination, off_t filesize, int recursive)
         {   
             // jeżeli katalog istnieje i ma tą samą datę modyfikacji co źródłowy to pomijamy
             if(checkExistence(dst,srcEntry->d_name) == 0 && cmpModificationDate(srcPath, dstPath) == 1)
+            {   
+                // aktualizujemy ścieżki (usuwamy aktualnie sprawdzany plik)  
+                srcPath[strlen(srcPath) - strlen(srcEntry->d_name)] = '\0';
+                dstPath[strlen(dstPath) - strlen(srcEntry->d_name)] = '\0';
                 continue;
+            }
 
             // jeżeli katalog nie stnieje
             if(checkExistence(dst,srcEntry->d_name) == 1)
@@ -279,5 +289,6 @@ void synchronize(char *source, char* destination, off_t filesize, int recursive)
     closedir(src);
     closedir(dst);
 }
+
 
 
