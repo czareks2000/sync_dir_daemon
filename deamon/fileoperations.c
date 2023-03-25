@@ -10,6 +10,7 @@
 #include <sys/mman.h>
 #include <syslog.h>
 #include <stdarg.h>
+#include <utime.h>
 
 #include "../headers/checkdirs.h"
 
@@ -103,6 +104,23 @@ int copy(char *source, char *destination)
         perror("Błąd podczas zamykania pliku docelowego");
         return -1;
     }
+
+    // uzyskanie informacji o pliku źródłowym
+    struct stat sb;
+    if (stat(source, &sb) == -1) {
+        perror("Błąd podczas uzyskiwania informacji o pliku źródłowym");
+        return -1;
+    }
+
+    // ustawienie takiej samej daty modyfikacji dla pliku docelowego
+    struct utimbuf times;
+    times.actime = sb.st_atime;
+    times.modtime = sb.st_mtime;
+    if (utime(destination, &times) == -1) {
+        perror("Błąd podczas ustawiania daty modyfikacji dla pliku docelowego");
+        return -1;
+    }
+
 
     return 0;
 }
