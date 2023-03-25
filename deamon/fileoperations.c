@@ -27,7 +27,7 @@ void sendLog(const char *format, ...)
 
     va_end(args);
 
-    // Otwieramy połączenie z logiem ("/var/log/syslog")
+    // Otwieramy połączenie z logiem
     openlog("sync_dir_deamon", LOG_ODELAY | LOG_PID, LOG_DAEMON);
     // Zapisujemy do logu informację.
     syslog(LOG_INFO, "%s", message);
