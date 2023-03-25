@@ -9,11 +9,31 @@
 #include <time.h>
 #include <sys/mman.h>
 #include <syslog.h>
+#include <stdarg.h>
 
 #include "../headers/checkdirs.h"
 
 // rozmiar bufora
 #define BUFFER 4096
+
+void sendLog(const char *format, ...)
+{   
+    char message[1024];
+    va_list args;
+    va_start(args, format);
+
+    // Tworzymy bufor formatowania.
+    vsnprintf(message, sizeof(message), format, args);
+
+    va_end(args);
+
+    // Otwieramy połączenie z logiem ("/var/log/syslog")
+    openlog("sync_dir_deamon", LOG_ODELAY | LOG_PID, LOG_DAEMON);
+    // Zapisujemy do logu informację.
+    syslog(LOG_INFO, "%s", message);
+    // Zamykamy połączenie z logiem.
+    closelog();
+}
 
 int copy(char *source, char *destination)
 {
@@ -187,12 +207,12 @@ void synchronize(char *source, char* destination, off_t filesize, int recursive)
             if(getFileSize(srcPath) >= filesize)
             {
                 mmapCopy(srcPath, dstPath);
-                syslog(LOG_INFO, "Demon kopiuje plik z użyciem mmap.");
+                sendLog("Demon skopiował plik: %s z użyciem mmap", srcPath);
             }
             else
             {
                 copy(srcPath, dstPath);
-                syslog(LOG_INFO, "Demon kopiuje plik.");
+                sendLog("Demon skopiował plik: %s", srcPath);
             }
         }
         // jeżeli plik jest katalogiem i jest wybrana opcja rekurencyjna
@@ -207,7 +227,7 @@ void synchronize(char *source, char* destination, off_t filesize, int recursive)
             {
                 // tworzymy katalog
                 mkdir(dstPath, 0775);
-                syslog(LOG_INFO, "Demon skopiował katalog.");
+                sendLog("Demon skopiował katalog: %s", dstPath);
             }
 
             // kopiujemy pliki rekurencyjnie

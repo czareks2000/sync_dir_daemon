@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "unistd.h": "c",
-        "main.h": "c"
+        "main.h": "c",
+        "checkdirs.h": "c"
     }
 }

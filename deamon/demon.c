@@ -74,13 +74,13 @@ int main(int argc, char *argv[])
   while(1)
   {
     // uspanie procesu
-    syslog(LOG_INFO, "Demon idzie spać.");
+    sendLog("Demon idzie spać.");
     sleep(time); 
 
     // przesłanie informacji do logu
     if(sigCheck == 0)
-      syslog(LOG_INFO, "Demon wybudzony naturalnie.");
-
+      sendLog("Demon wybudzony naturalnie.");
+  
     // jeżeli otrzymano sygnał SIGTERM
     if(term == 1)
       exit(0); //kończymy program

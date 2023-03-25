@@ -147,19 +147,17 @@ void deleteExcessiveFiles(char *source, char *destination, int recur)
                 // Jeżeli posiada katalogi lub pliki
                 if(countFiles(dstPath) > 0)
                 {
-                    printf("%d\n", countFiles(dstPath));
-                    printf("%s\n", dstPath);
                     // Rekurencyjne usuwanie podkatalogów i plików
                     deleteExcessiveFiles(srcPath, dstPath, recur);
                 }
                 // Usuwamy katalog
-                syslog(LOG_INFO, "Daemon deleted directory: %s", dstPath);
+                sendLog("Demon usuną katalog: %s", dstPath);
                 remove(dstPath);
             }
             else // Jeżeli nie jest katalogiem
             {   
                 // Usuwamy plik
-                syslog(LOG_INFO, "Daemon deleted file: %s", dstPath);
+                sendLog("Demon usuną plik: %s", dstPath);
                 remove(dstPath);
             }
         }

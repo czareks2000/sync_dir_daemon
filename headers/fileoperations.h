@@ -1,6 +1,17 @@
 #ifndef FILEOPERATIONS_H_
 #define FILEOPERATIONS_H_
 
+
+/**
+ * @brief Wysyła informacje do logu
+ * 
+ * @param format Treść informacji
+ * @param ... dodatkowe argumenty do formatowania
+ * 
+ * @return void
+ */
+void sendLog(const char *format, ...)
+
 /**
  * @brief Kopiuje plik z jednej lokalizacji do drugiej.
  * 
