@@ -63,9 +63,9 @@ off_t getFileSize(char *path);
  * @param source Ścieżka do pliku, który ma zostać skopiowany.
  * @param destination Ścieżka do nowego pliku, do którego zostanie skopiowany plik źródłowy.
  * 
- * @return void
+ * @return Wartość 0 w przypadku powodzenia, w przypadku błędu -1.
  */
-void mmapCopy(char *source, char *destination);
+int mmapCopy(char *source, char *destination);
 
 /**
  * @brief Funkcja kopiuje pliki i katalogi z jednej lokalizacji do drugiej, wykorzystując rekurencję.

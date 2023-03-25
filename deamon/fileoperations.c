@@ -13,6 +13,7 @@
 #include <utime.h>
 
 #include "../headers/checkdirs.h"
+#include "../headers/fileoperations.h"
 
 // rozmiar bufora
 #define BUFFER 4096
@@ -105,7 +106,7 @@ int copy(char *source, char *destination)
         return -1;
     }
 
-    if(copyModificationDate(source, destination) < 0){
+    if(copyModificationDate(source, destination) < 0) {
         perror("Błąd podczas kopiowania daty modyfikacji");
         return -1;
     }
@@ -165,7 +166,7 @@ off_t getFileSize(char *path)
     return fileSB.st_size;
 }
 
-void mmapCopy(char *source, char *destination)
+int mmapCopy(char *source, char *destination)
 {   
     // pobieramy rozmar pliku
     size_t size = getFileSize(source);
@@ -197,6 +198,8 @@ void mmapCopy(char *source, char *destination)
         perror("Błąd podczas kopiowania daty modyfikacji");
         return -1;
     }
+
+    return 0;
 }
 
 void synchronize(char *source, char* destination, off_t filesize, int recursive)
