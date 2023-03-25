@@ -54,29 +54,9 @@ int main(int argc, char *argv[])
     return -1;
   }
   
-  // sprawdzenie podanych parametrów (można to zamienić na lepszą fukncję)
-  if(argc > 3) 
-  {
-    for(int i = 3; i<argc; i++)
-    {
-      if(argv[i][0] == '-')
-      {
-        switch(argv[i][1])
-        {
-          case 't': // ustawiamy czas spania
-            time = atoi(argv[i+1]);
-            break;
-          case 'R': // ustawiamy rekurencyjnesprawdzanie katalogów
-            recursive = 1;
-            break;
-          case 's': // ustawiamy próg dużego pliku
-            filesize = atol(argv[i+1])*1024*1024;
-          default:
-            break;
-        }
-      }
-    }
-  }
+  // sprawdzenie podanych parametrów
+  if(setParameters(argc, argv) < 0)
+    return -1;
 
   // sprawdzenie czy podane ścieżki są do katalogów
   if(checkdirs(argv) < 0)
@@ -113,6 +93,36 @@ int main(int argc, char *argv[])
 
     sigCheck = 0;
   }
+
+  return 0;
+}
+
+int setParameters(int argc, char *argv[])
+{
+  if(argc > 3) 
+  {
+    for(int i = 3; i<argc; i++)
+    {
+      if(argv[i][0] == '-')
+      {
+        switch(argv[i][1])
+        {
+          case 't': // ustawiamy czas spania
+            time = atoi(argv[i+1]);
+            break;
+          case 'R': // ustawiamy rekurencyjne sprawdzanie katalogów
+            recursive = 1;
+            break;
+          case 's': // ustawiamy próg dużego pliku
+            filesize = atol(argv[i+1])*1024*1024;
+          default:
+            break;
+        }
+      }
+    }
+  }
+  else
+    return -1;
 
   return 0;
 }
