@@ -58,6 +58,8 @@ int copyModificationDate(char *source, char *destination);
 off_t getFileSize(char *path);
 
 /**
+ * @todo trzeba użyć write() do zapisu
+ * 
  * @brief Kopiuje plik o podanej ścieżce do nowego pliku przy użyciu mapowania pamięci.
  * 
  * @param source Ścieżka do pliku, który ma zostać skopiowany.
