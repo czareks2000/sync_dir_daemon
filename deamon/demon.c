@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
   signal(SIGUSR1, sigusr_handler); 
   signal(SIGTERM, sigterm_handler);
   
-  // główna pętla demona (można wyrzucić do oddzielnej fukncji)
+  // główna pętla demona
   while(1)
   {
     // uspanie procesu
