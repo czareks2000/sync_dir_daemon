@@ -1,13 +1,13 @@
- ./demon /home/user/sync_dir_daemon/src /home/user/sync_dir_daemon/dst -R -t 10
+./demon /home/cezary/sync_dir_deamon/src /home/cezary/sync_dir_deamon/dst -R -t 10
 
-./demon /home/cezary/sync_dir_deamon/src /home/cezary/sync_dir_daemon/dst -R -t 10
+dd if=/dev/zero of=largefile bs=1M count=600
 
- sudo journalctl -f  
+sudo journalctl -f  
 
- ps -aux
+ps -aux
 
- kill nr_procesu
+kill nr_procesu
 
- kill -s USR1 nr_procesu
+kill -s USR1 nr_procesu
 
-  może połączyć deleteExcessiveFiles() z synchronize()
+może połączyć deleteExcessiveFiles() z synchronize()
