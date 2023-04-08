@@ -73,7 +73,7 @@ int copy(char *source, char *destination)
 
     while (1)
     {
-        // czytanie kolejno bajtów do momentu ich braku
+        // wczytanie bajtów z pliku źródłowego do bufora
         bytes_read = read(source_file, buffer, BUFFER);
         if(bytes_read == 0)
             break;
@@ -87,7 +87,7 @@ int copy(char *source, char *destination)
             return -1;
         }
 
-        // zapisywanie klejno bajtów
+        // zapisanie bajtów do pliku docelowego z bufora
         bytes_written = write(destination_file, buffer, bytes_read);
         if(bytes_written < bytes_read)
         {

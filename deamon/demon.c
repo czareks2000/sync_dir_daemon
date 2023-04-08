@@ -22,14 +22,14 @@ off_t filesize = 512; // próg dużego pliku (MB)
 //obsługa SIGUSR1
 void sigusr_handler(int sig) 
 {
-  syslog(LOG_INFO, "Demon obudzony przez SIGUSR1");
+  sendLog("Demon obudzony przez SIGUSR1.");
   sigCheck = 1;
 }
 
 //obsługa SIGTERM
 void sigterm_handler(int sig) 
 {
-  syslog(LOG_INFO, "Proces demona zakończony.");
+  sendLog("Proces demona zakończony.");
   term = 1;
 }
 
