@@ -1,4 +1,6 @@
-./demon /home/cezary/sync_dir_deamon/src /home/cezary/sync_dir_deamon/dst -R -t 10
+./demon /home/cezary/sync_dir_daemon/src /home/cezary/sync_dir_daemon/dst -R -t 10
+
+./demon /home/kali/sync_dir_daemon/src /home/kali/sync_dir_daemon/dst -R -t 10
 
 dd if=/dev/zero of=largefile bs=1M count=600
 
