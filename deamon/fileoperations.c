@@ -39,73 +39,82 @@ void sendLog(const char *format, ...)
 
 int copy(char *source, char *destination)
 {
-    int plik_zrodlowy = open(source, O_RDONLY);
+   // otwarcie pliku źródłowego
+    int source_file = open(source, O_RDONLY);
 
-    if(plik_zrodlowy < 0)
+    if(source_file < 0)
     {
         fprintf(stderr, "Błąd: nie udało się otworzyć pliku %s\n", source);
         return -1;
     }
 
-    int plik_docelowy = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    // otwiercie pliku docelowego
+    int destination_file = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 0666);
      
-    if(plik_docelowy < 0)
+    if(destination_file < 0)
     {
         fprintf(stderr, "Błąd: nie udało się otworzyć pliku %s\n", destination);
-        close(plik_zrodlowy);
+        close(source_file);
         return -1;
     }
     
-    char *bufor = malloc(BUFFER);
+    // zarezerwowanie pamięci na bufor
+    char *buffer = malloc(BUFFER);
 
-    if (bufor == NULL) {
+    if (buffer == NULL) {
         perror("Nie udało się zarezerować pamięci dla bufora");
-        close(plik_zrodlowy);
-        close(plik_docelowy);
+        close(source_file);
+        close(destination_file);
         return -1;
     }
 
-    ssize_t liczba_odczytanych_bajtow = 0;
-    ssize_t liczba_zapisanych_bajtow = 0;
+    ssize_t bytes_read = 0;
+    ssize_t bytes_written = 0;
 
     while (1)
     {
-        liczba_odczytanych_bajtow = read(plik_zrodlowy, bufor, BUFFER);
-        if(liczba_odczytanych_bajtow == 0)
+        // czytanie kolejno bajtów do momentu ich braku
+        bytes_read = read(source_file, buffer, BUFFER);
+        if(bytes_read == 0)
             break;
 
-        if(liczba_odczytanych_bajtow < 0)
+        if(bytes_read < 0)
         {
             perror("Błąd podczas odczytu danych");
-            close(plik_zrodlowy);
-            close(plik_docelowy);
-            free(bufor);
+            close(source_file);
+            close(destination_file);
+            free(buffer);
             return -1;
         }
 
-        liczba_zapisanych_bajtow = write(plik_docelowy, bufor, liczba_odczytanych_bajtow);
-        if(liczba_zapisanych_bajtow < liczba_odczytanych_bajtow)
+        // zapisywanie klejno bajtów
+        bytes_written = write(destination_file, buffer, bytes_read);
+        if(bytes_written < bytes_read)
         {
             perror("Błąd podczas zapisywania danych");
-            close(plik_zrodlowy);
-            close(plik_docelowy);
-            free(bufor);
+            close(source_file);
+            close(destination_file);
+            free(buffer);
             return -1;
         }
     }
 
-    free(bufor); 
+    // zwolnienie pamięci bufora
+    free(buffer); 
 
-    if (close(plik_zrodlowy) == -1) {
+    // zamknięcie pliku źródłowego
+    if (close(source_file) == -1) {
         perror("Błąd podczas zamykania pliku źródłowego");
         return -1;
     }
 
-    if (close(plik_docelowy) == -1) {
+    // zamknięcie pliku docelowego
+    if (close(destination_file) == -1) {
         perror("Błąd podczas zamykania pliku docelowego");
         return -1;
     }
 
+    // zmiana daty modyfikacji
     if(copyModificationDate(source, destination) < 0) {
         perror("Błąd podczas kopiowania daty modyfikacji");
         return -1;
