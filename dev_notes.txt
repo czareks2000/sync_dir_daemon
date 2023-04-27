@@ -11,5 +11,3 @@ ps -aux
 kill nr_procesu
 
 kill -s USR1 nr_procesu
-
-może połączyć deleteExcessiveFiles() z synchronize()
