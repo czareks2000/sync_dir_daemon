@@ -128,9 +128,9 @@ void deleteExcessiveFiles(char *source, char *destination, int recur)
                 {
                     found = 1; // ustawiamy flagę
 
-                    // Jeśli elementy to katalogi i mają takie same daty modyfikacji
+                    // Jeśli elementy to katalogi i mają różne daty modyfikacji
                     // oraz rekurencja jest włączona, usuwamy zbędne pliki
-                    if(sEnt->d_type == DT_DIR && cmpModificationDate(srcPath, dstPath) == 0 && recur == 1)
+                    if(sEnt->d_type == DT_DIR && cmpModificationDate(srcPath, dstPath) != 1 && recur == 1)
                     {
                         deleteExcessiveFiles(srcPath, dstPath, recur);
                     }
